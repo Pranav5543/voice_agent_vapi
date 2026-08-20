@@ -1,0 +1,12 @@
+{
+  "name": "kapture-collections-voicebot-tools",
+  "version": "1.0.0",
+  "description": "Mock function/tool webhook server for the Kapture Finance collections voicebot (Vapi assignment).",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

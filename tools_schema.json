@@ -1,0 +1,149 @@
+{
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "verify_customer",
+        "description": "Authenticate the person on the call before any account or debt information is disclosed. Must be called before get_account_details. If verification fails twice, do not retry a third time.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "full_name": {
+              "type": "string",
+              "description": "Full name as stated by the caller."
+            },
+            "dob_or_last4_id": {
+              "type": "string",
+              "description": "Date of birth (DD-MM-YYYY) or last 4 digits of the ID/loan account number provided by the caller for verification."
+            },
+            "phone_last4": {
+              "type": "string",
+              "description": "Last 4 digits of the registered mobile number, optional secondary factor."
+            }
+          },
+          "required": ["full_name", "dob_or_last4_id"]
+        }
+      },
+      "server": { "url": "https://<your-webhook-host>/tools/verify_customer" }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "get_account_details",
+        "description": "Fetch the caller's overdue loan details. Only callable after verify_customer has returned verified=true in this call session.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "customer_id": {
+              "type": "string",
+              "description": "Internal customer/loan ID returned by verify_customer."
+            }
+          },
+          "required": ["customer_id"]
+        }
+      },
+      "server": { "url": "https://<your-webhook-host>/tools/get_account_details" }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "log_promise_to_pay",
+        "description": "Record a payment commitment (PTP) made by the customer during the call.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "customer_id": { "type": "string", "description": "Internal customer/loan ID." },
+            "ptp_amount": { "type": "number", "description": "Amount in INR the customer committed to pay." },
+            "ptp_date": { "type": "string", "description": "Committed payment date in YYYY-MM-DD." },
+            "payment_mode": {
+              "type": "string",
+              "enum": ["upi_link", "netbanking_link", "auto_debit_retry", "branch_cash"],
+              "description": "How the customer intends to pay."
+            }
+          },
+          "required": ["customer_id", "ptp_amount", "ptp_date"]
+        }
+      },
+      "server": { "url": "https://<your-webhook-host>/tools/log_promise_to_pay" }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "send_payment_link",
+        "description": "Trigger an SMS/WhatsApp with a secure payment link to the customer's registered number. Never call before verify_customer has succeeded.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "customer_id": { "type": "string", "description": "Internal customer/loan ID." },
+            "amount": { "type": "number", "description": "Amount in INR to pre-fill in the payment link." },
+            "channel": {
+              "type": "string",
+              "enum": ["sms", "whatsapp"],
+              "description": "Delivery channel for the payment link."
+            }
+          },
+          "required": ["customer_id", "amount", "channel"]
+        }
+      },
+      "server": { "url": "https://<your-webhook-host>/tools/send_payment_link" }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "escalate_to_agent",
+        "description": "Transfer the live call to a human collections agent, passing full context. Use for hardship needing restructuring, unresolved disputes, sustained hostility, or when the bot cannot progress the conversation.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "customer_id": { "type": "string", "description": "Internal customer/loan ID, if known." },
+            "reason": {
+              "type": "string",
+              "enum": ["hardship", "unresolved_dispute", "hostile_caller", "off_script", "explicit_request"],
+              "description": "Why the call is being escalated."
+            },
+            "call_summary": {
+              "type": "string",
+              "description": "1-3 sentence summary of the conversation so far for the human agent."
+            }
+          },
+          "required": ["reason", "call_summary"]
+        }
+      },
+      "server": { "url": "https://<your-webhook-host>/tools/escalate_to_agent" }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "mark_disposition",
+        "description": "Close out the call with a final outcome code. Must be called exactly once before the call ends, on every path (including wrong-person, auth-failed, voicemail).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "customer_id": { "type": "string", "description": "Internal customer/loan ID, if known." },
+            "disposition": {
+              "type": "string",
+              "enum": [
+                "ptp_confirmed",
+                "already_paid_claimed",
+                "dispute_raised",
+                "hardship_flagged",
+                "wrong_person",
+                "auth_failed",
+                "do_not_call_requested",
+                "voicemail_left",
+                "no_input_timeout",
+                "escalated_to_human",
+                "hostile_terminated",
+                "callback_requested"
+              ],
+              "description": "Final outcome of the call."
+            },
+            "notes": { "type": "string", "description": "Free-text notes for QA/audit." }
+          },
+          "required": ["disposition"]
+        }
+      },
+      "server": { "url": "https://<your-webhook-host>/tools/mark_disposition" }
+    }
+  ]
+}
