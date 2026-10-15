@@ -1,11 +1,11 @@
-# Kapture Finance Collections Voicebot — README
+#  Voice Agent - (Vapi) — README
 
-Submission for the Kapture AI Delivery Intern take-home assignment.
+ 
 
 ## What's in this folder
 
 ```
-kapture/
+Voice_agent_vapi/
 ├── HLD_Collections_Voicebot.docx   # Task 1 — design document
 ├── diagrams/
 │   ├── architecture.png            # pipeline diagram
